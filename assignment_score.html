@@ -1,0 +1,154 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <meta charset="utf-8" />
+
+    <style>
+        #contain {
+            margin: 50px auto;
+            width: 600px;
+            line-height: 40px;
+            border: 1px solid #9B9B9B;
+            padding: 20px;
+        }
+
+        .div_text {
+            line-height: 30px;
+        }
+
+        .input_update {
+            width: 550px;
+            height: 24px;
+        }
+
+        #taSrc {
+            margin-top: 10px;
+            width: 550px;
+            height: 100px;
+        }
+
+        .input_compute {
+            height: 24px;
+            width: 100px;
+        }
+
+        #taDst {
+            margin-top: 10px;
+            width: 550px;
+            height: 200px;
+        }
+    </style>
+
+</head>
+<body>
+
+    <div id="contain">
+
+        <div class="div_text">
+            <p>
+                How to use this:
+            </p>
+            <ol>
+                <li>Login to PASS and into the page "Submit History".</li>
+                <li>Export to EXCEL.</li>
+                <li>Filter the item by the deadline time.</li>
+                <li>Click Browser to update the excel file.</li>
+                <li>Select and copy the students' EID from "Lab grade.xls", paste them into the RichTextBox.</li>
+                <li>Press Compute and Wait.</li>
+                <li>Select and copy the result, paste them into "Lab grade.xls".</li>
+                <li>Have fun.</li>
+            </ol>
+
+            <p>
+                If <span style="color:red;">ERROR</span>, Then => Open IE -> Tools ->Internet Options -> Security -> Custom Level -> ActiveX controls and plug-ins ->Enable "Initialize and script ActiveX controls not marked as safe for scripting"
+            </p>
+
+        </div>
+
+        <input type="file" id="upfile" class="input_update" />
+
+        <textarea id="taSrc"></textarea>
+
+        <input type="button" onclick="ReadExcel();" class="input_compute" value="Compute" />
+
+        <textarea id="taDst"></textarea>
+
+    </div>
+
+    <script type="text/javascript">
+
+        function ReadExcel() {
+            var tempStr = "";
+            //得到文件路径的值
+            var filePath = document.getElementById("upfile").value;
+            //创建操作EXCEL应用程序的实例
+            var oXL = new ActiveXObject("Excel.Application");
+            //打开指定路径的excel文件
+            var oWB = oXL.Workbooks.open(filePath);
+            //操作第一个sheet(从一开始，而非零)
+            oWB.worksheets(1).select();
+            var oSheet = oWB.ActiveSheet;
+            //使用的行数
+            var rows = oSheet.usedrange.rows.count;
+            //try {
+
+            var stuArr = {};
+
+            for (var i = 2; i <= rows; i++) {
+
+                var studentEID = oSheet.Cells(i, 1).value.toString();
+                var studentScore = oSheet.Cells(i, 6).value;
+                if (studentScore == null || studentScore.toString() == "undefined") {
+                    continue;
+                }
+                var studentScore = /(.*)/g.exec(studentScore)[1];
+
+                //Check if exist
+                if (stuArr[studentEID]) {
+                    var oldScore = stuArr[studentEID];
+                    if (studentScore > oldScore) {
+                        stuArr[studentEID] = studentScore;
+                    }
+                }
+                else {
+                    stuArr[studentEID] = studentScore;
+                }
+
+            }
+
+            //Compute score
+            var arrEID = document.getElementById("taSrc").value.split("\n");
+            var arrOutput = [];
+            for (var i in arrEID) {
+                var eid = arrEID[i];
+                if (eid == "") {
+                    continue;
+                }
+                if (stuArr[eid]) {
+                    arrOutput.push(stuArr[eid]);
+                }
+                else {
+                    arrOutput.push("0");
+                }
+            }
+
+            document.getElementById("taDst").value = arrOutput.join("\n");
+
+            /*
+        } catch (e) {
+            document.getElementById("taDst").value = 'Open IE -> Tools ->Internet Options -> Security -> Custom Level -> ActiveX controls and plug-ins ->Enable "Initialize and script ActiveX controls not marked as safe for scripting';
+        }
+        */
+
+            //退出操作excel的实例对象
+            oXL.Application.Quit();
+            //手动调用垃圾收集器
+            CollectGarbage();
+        }
+    </script>
+
+</body>
+
+
+</html>
